@@ -1,13 +1,13 @@
 {
   "name": "just-install",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "A Node.js installer for the excellent Just command runner (https://just.systems)",
   "main": "index.js",
   "scripts": {
     "preinstall": "node ./install.js"
   },
   "bin": {
-    "just": "./bin/just"
+    "just": "./bin/_just"
   },
   "repository": "https://github.com/brombal/just-installer",
   "author": "Alex Brombal",

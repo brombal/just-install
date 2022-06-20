@@ -1,6 +1,6 @@
 {
   "name": "just-install",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A Node.js installer for the excellent Just command runner (https://just.systems)",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
   "bin": {
     "just": "./bin/just"
   },
-  "repository": "https://github.com/brombal/just-installer",
+  "repository": "https://github.com/brombal/just-install",
   "author": "Alex Brombal",
   "license": "MIT",
   "keywords": [

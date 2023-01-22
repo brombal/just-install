@@ -1,10 +1,9 @@
 {
   "name": "just-install",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "A Node.js installer for the excellent Just command runner (https://just.systems)",
   "main": "index.js",
   "scripts": {
-    "prepublishOnly": "rm -f bin/just",
     "postinstall": "./install.sh -f --to ./bin"
   },
   "bin": {

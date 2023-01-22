@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "This file is just a stub; it is not meant to be executed.
+It will be replaced by the postinstall script with the binary for the target platform."

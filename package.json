@@ -4,8 +4,8 @@
   "description": "A Node.js installer for the excellent Just command runner (https://just.systems)",
   "main": "index.js",
   "scripts": {
-    "preinstall": "node ./install.js",
-    "prepublishOnly": "rm -f bin/just"
+    "prepublishOnly": "rm -f bin/just",
+    "postinstall": "./install.sh -f --to ./bin"
   },
   "bin": {
     "just": "./bin/just"

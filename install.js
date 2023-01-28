@@ -1,26 +1,30 @@
-const https = require("https");
-const fs = require("fs");
-const child_process = require("child_process");
+const https = require('https');
+const fs = require('fs');
+const child_process = require('child_process');
 
-const url = "https://just.systems/install.sh";
+const url = 'https://just.systems/install.sh';
 
 try {
   fs.unlinkSync('./bin/just');
-} catch (err) {}
+} catch (err) {
+  // ignore
+}
 
 const IS_YARN = process.env.npm_execpath.includes('yarn');
 
 https.get(url, res => {
-  res.setEncoding("utf8");
-  let body = "";
-  res.on("data", data => {
+  res.setEncoding('utf8');
+  let body = '';
+  res.on('data', data => {
     body += data;
   });
-  res.on("end", () => {
+  res.on('end', () => {
     fs.writeFileSync('./install.sh', body);
     fs.chmodSync('./install.sh', '755');
 
-    child_process.execFileSync('./install.sh', ['--to', './bin'], { stdio: 'inherit' });
+    child_process.execFileSync('./install.sh', ['--to', './bin'], {
+      stdio: 'inherit',
+    });
 
     if (IS_YARN) {
       // move bin/just to bin/justbin

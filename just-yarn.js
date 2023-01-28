@@ -14,5 +14,5 @@ const path = require('path');
 child_process.execFileSync(
   path.resolve(__dirname, './justbin'),
   process.argv.slice(2),
-  { stdio: 'inherit' }
+  {stdio: 'inherit'}
 );

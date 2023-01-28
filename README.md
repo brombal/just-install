@@ -45,6 +45,18 @@ $ npx just start
 
 It's great for teams who want to make the set up process for their project as easy as possible.
 
+# Implementation notes
+
+- The installer script from Just is included in this repo and modified slightly because as of this 
+  writing, the `--tlsv1.3` flag used for curl does not seem to work on MacOS Ventura (13.1). It
+  has been replaced with `--tlsv1.2`. Hopefully this will be resolved either by Just or Apple 
+  (haha).
+
+- Yarn cannot execute non-JS scripts as binaries. The workaround is to make the binary a JS file 
+  that executes the Just binary (using `child_process.execFileSync()`). There is an outstanding 
+  issue on yarn's Github (https://github.com/yarnpkg/berry/issues/882); hopefully there will be some 
+  resolution eventually. 
+
 # MIT License
 
 Copyright © 2022 Alex Brombal

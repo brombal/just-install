@@ -4,7 +4,7 @@
   "description": "A Node.js installer for the excellent Just command runner (https://just.systems)",
   "main": "index.js",
   "scripts": {
-    "postinstall": "./install.sh -f --to ./bin"
+    "postinstall": "node ./install.js"
   },
   "bin": {
     "just": "./bin/just"

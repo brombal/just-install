@@ -9,10 +9,12 @@
  */
 
 const child_process = require('node:child_process');
-const path = require('path');
+const path = require('node:path');
+const fs = require('node:fs');
 
-child_process.execFileSync(
-  path.resolve(__dirname, './justbin'),
-  process.argv.slice(2),
-  {stdio: 'inherit'}
-);
+let execPath = path.resolve(__dirname, './justbin');
+if (!fs.existsSync(execPath)) {
+  execPath = path.resolve(__dirname, './justbin.exe');
+}
+
+child_process.execFileSync(execPath, process.argv.slice(2), {stdio: 'inherit'});

@@ -1,121 +1,74 @@
 #!/usr/bin/env node
+import path from 'node:path';
+import fs from 'node:fs';
+import child_process from 'node:child_process';
+import fetch from 'node-fetch';
+import extract from 'extract-zip';
+import url from "url";
 
-const os = require('node:os');
-const path = require('node:path');
-const fs = require('node:fs/promises');
-const {existsSync} = require('node:fs');
-const extract = require('extract-zip');
-const tar = require('tar');
-const {fetch} = require('undici');
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// eslint-disable-next-line no-unused-vars
-const IS_YARN =
-  process.env.npm_execpath !== undefined &&
-  process.env.npm_execpath.includes('yarn');
-const baseDownloadUrl = 'https://github.com/casey/just/releases/latest';
-
-const arch = `${os.machine()}-${os.platform()}`;
 const binDir = path.resolve(__dirname, 'bin');
 
-const availableBinaries = {
-  'x86_64-win32': 'just-{TAG}-x86_64-pc-windows-msvc.zip',
-  'aarch64-darwin': 'just-{TAG}-aarch64-apple-darwin.tar.gz',
-  'aarch64-linux': 'just-{TAG}-aarch64-unknown-linux-musl.tar.gz',
-  'x86_64-darwin': 'just-{TAG}-x86_64-apple-darwin.tar.gz',
-  'x86_64-linux': 'just-{TAG}-x86_64-unknown-linux-musl.tar.gz',
-};
+async function installNix() {
+  const justInstallShScriptUrl = 'https://just.systems/install.sh';
+
+  const res = await fetch(justInstallShScriptUrl);
+
+  const buffer = await res.arrayBuffer();
+  fs.writeFileSync('./install.sh', new DataView(buffer));
+  fs.chmodSync('./install.sh', '755');
+
+  child_process.execFileSync('./install.sh', ['-f', '--to', './bin'], {
+    stdio: 'inherit',
+  });
+
+  fs.rmSync('./install.sh');
+}
+
+async function installWindows() {
+  const baseDownloadUrl = 'https://github.com/casey/just/releases/latest';
+  const windowsZipName = 'just-{TAG}-x86_64-pc-windows-msvc.zip';
+
+  // Get asset url
+  // Redirects to the latest release tag.
+  // e.g., https://github.com/casey/just/releases/tag/1.13.0
+  const assetUrlRes = await fetch(baseDownloadUrl, { redirect: 'manual' });
+  const tag = assetUrlRes.headers.get('location').split('/').pop();
+  const assetName = windowsZipName.replace('{TAG}', tag);
+  const assetUrl = `${baseDownloadUrl}/download/${assetName}`;
+
+  // Create ./extract directory
+  const extractPath = path.resolve(__dirname, 'extract');
+  fs.rmSync(extractPath, { force: true, recursive: true });
+  fs.mkdirSync(extractPath);
+
+  // Download archive to ./extract/[assetName].zip
+  const archivePath = path.resolve(extractPath, path.basename(assetUrl));
+  const downloadRes = await fetch(assetUrl, { maxRedirections: 5 });
+  const archiveBuffer = await downloadRes.arrayBuffer();
+  fs.writeFileSync(archivePath, new DataView(archiveBuffer));
+
+  // Unpack archive into ./extract
+  await extract(archivePath, { dir: extractPath });
+
+  // Move ./extract/just.exe to ./bin/just.exe
+  fs.copyFileSync(
+    path.resolve(extractPath, 'just.exe'),
+    path.resolve(binDir, 'just.exe')
+  );
+
+  // Delete ./extract
+  fs.rmSync(extractPath, { force: true, recursive: true });
+}
 
 async function install() {
-  await clean();
-  if (!(arch in availableBinaries)) throwUnsupportedError();
-  const assetUrl = await getAssetUrl();
-  await download(assetUrl);
-  await unpackArchive(path.resolve(__dirname, path.basename(assetUrl)));
+  if (process.platform === 'win32') {
+    await installWindows();
+  } else {
+    await installNix();
+  }
 }
 
 void install();
-
-async function unpackArchive(archive) {
-  if (path.extname(archive) === '.zip') {
-    await unpackZip(archive);
-  } else {
-    await unpackTar(archive);
-  }
-  // Temporarily left just in case author wishes to
-  // to provide two separate bin entries for windows and
-  // non-windows. see ./index.js for more details
-  // if (IS_YARN) {
-  //   await supportYarn();
-  // }
-  await fs.rm(archive);
-}
-
-async function unpackTar(tarball) {
-  await tar.extract({
-    cwd: binDir,
-    file: tarball,
-  });
-  await fs.chmod(path.join(binDir, 'just'), '755');
-}
-
-async function unpackZip(zip) {
-  await extract(zip, {dir: binDir});
-}
-
-async function download(assetUrl) {
-  const filename = path.resolve(__dirname, path.basename(assetUrl));
-  const res = await fetch(assetUrl);
-  await fs.writeFile(filename, res.body);
-}
-
-async function getAssetUrl() {
-  const tag = await getTag();
-  const assetName = availableBinaries[arch].replace('{TAG}', tag);
-  return `${baseDownloadUrl}/download/${assetName}`;
-}
-
-async function getTag() {
-  // redirects to the latest release tag.
-  // e.g., https://github.com/casey/just/releases/tag/1.13.0
-  const res = await fetch(baseDownloadUrl, {
-    redirect: 'manual',
-  });
-
-  return res.headers.get('location').split('/').pop();
-}
-
-// Temporarily left just in case author wishes to
-// to provide two separate bin entries for windows and
-// non-windows. see ./index.js for more details
-// eslint-disable-next-line no-unused-vars
-async function supportYarn() {
-  // move bin/just to bin/justbin
-  let execPath = path.resolve(__dirname, './just');
-  if (!existsSync(execPath)) {
-    execPath = path.resolve(__dirname, './just.exe');
-  }
-  const ext = path.extname(execPath);
-  await fs.rename(execPath, `./bin/justbin${ext}`);
-
-  // copy just-yarn.js to /bin/just
-  await fs.copyFile(
-    path.resolve(__dirname, './just-yarn.js'),
-    path.join(binDir, 'just')
-  );
-
-  // chmod +x bin/just
-  await fs.chmod('./bin/just', '755');
-}
-
-async function clean() {
-  const files = await fs.readdir(binDir);
-  for (const file of files) {
-    await fs.unlink(path.join(binDir, file));
-  }
-}
-
-function throwUnsupportedError() {
-  let msg = `Unable to download and instal for ${arch}.\n`;
-  msg += 'Visit https://github.com/casey/just for other installation options.';
-  throw new Error(msg);
-}

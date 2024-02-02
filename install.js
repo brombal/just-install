@@ -1,40 +1,74 @@
-const https = require('https');
-const fs = require('fs');
-const child_process = require('child_process');
+#!/usr/bin/env node
+import path from 'node:path';
+import fs from 'node:fs';
+import child_process from 'node:child_process';
+import fetch from 'node-fetch';
+import extract from 'extract-zip';
+import url from "url";
 
-const url = 'https://just.systems/install.sh';
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-try {
-  fs.unlinkSync('./bin/just');
-} catch (err) {
-  // ignore
+const binDir = path.resolve(__dirname, 'bin');
+
+async function installNix() {
+  const justInstallShScriptUrl = 'https://just.systems/install.sh';
+
+  const res = await fetch(justInstallShScriptUrl);
+
+  const buffer = await res.arrayBuffer();
+  fs.writeFileSync('./install.sh', new DataView(buffer));
+  fs.chmodSync('./install.sh', '755');
+
+  child_process.execFileSync('./install.sh', ['-f', '--to', './bin'], {
+    stdio: 'inherit',
+  });
+
+  fs.rmSync('./install.sh');
 }
 
-const IS_YARN = process.env.npm_execpath.includes('yarn');
+async function installWindows() {
+  const baseDownloadUrl = 'https://github.com/casey/just/releases/latest';
+  const windowsZipName = 'just-{TAG}-x86_64-pc-windows-msvc.zip';
 
-https.get(url, res => {
-  res.setEncoding('utf8');
-  let body = '';
-  res.on('data', data => {
-    body += data;
-  });
-  res.on('end', () => {
-    fs.writeFileSync('./install.sh', body);
-    fs.chmodSync('./install.sh', '755');
+  // Get asset url
+  // Redirects to the latest release tag.
+  // e.g., https://github.com/casey/just/releases/tag/1.13.0
+  const assetUrlRes = await fetch(baseDownloadUrl, { redirect: 'manual' });
+  const tag = assetUrlRes.headers.get('location').split('/').pop();
+  const assetName = windowsZipName.replace('{TAG}', tag);
+  const assetUrl = `${baseDownloadUrl}/download/${assetName}`;
 
-    child_process.execFileSync('./install.sh', ['--to', './bin'], {
-      stdio: 'inherit',
-    });
+  // Create ./extract directory
+  const extractPath = path.resolve(__dirname, 'extract');
+  fs.rmSync(extractPath, { force: true, recursive: true });
+  fs.mkdirSync(extractPath);
 
-    if (IS_YARN) {
-      // move bin/just to bin/justbin
-      fs.renameSync('./bin/just', './bin/justbin');
+  // Download archive to ./extract/[assetName].zip
+  const archivePath = path.resolve(extractPath, path.basename(assetUrl));
+  const downloadRes = await fetch(assetUrl, { maxRedirections: 5 });
+  const archiveBuffer = await downloadRes.arrayBuffer();
+  fs.writeFileSync(archivePath, new DataView(archiveBuffer));
 
-      // copy just-yarn.js to /bin/just
-      fs.copyFileSync('./just-yarn.js', './bin/just');
+  // Unpack archive into ./extract
+  await extract(archivePath, { dir: extractPath });
 
-      // chmod +x bin/just
-      fs.chmodSync('./bin/just', '755');
-    }
-  });
-});
+  // Move ./extract/just.exe to ./bin/just.exe
+  fs.copyFileSync(
+    path.resolve(extractPath, 'just.exe'),
+    path.resolve(binDir, 'just.exe')
+  );
+
+  // Delete ./extract
+  fs.rmSync(extractPath, { force: true, recursive: true });
+}
+
+async function install() {
+  if (process.platform === 'win32') {
+    await installWindows();
+  } else {
+    await installNix();
+  }
+}
+
+void install();

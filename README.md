@@ -4,6 +4,8 @@ A simple Node.js installer for the excellent Just command runner (https://just.s
 you to install Just as part of the `npm install` command, so you don't have to worry about setting
 it up separately. Great for development teams!
 
+> Now with Windows support!
+
 Local usage (great for team projects):
 
 ```bash
@@ -20,8 +22,6 @@ $ npm install -g just-install
 $ yarn global add just-install
 ```
 
-> Now with Windows support!
-
 ## Purpose
 
 Using Just is an excellent option for a more robust command runner in your Node.js projects.
@@ -34,7 +34,7 @@ command.
 
 After installation, the `just` command will work in npm scripts:
 
-```json
+```js
 // package.json:
 
 {

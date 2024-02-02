@@ -1,6 +1,8 @@
 # Node.js/npm Just installer
 
-A simple Node.js installer for the excellent Just command runner (https://just.systems).
+A simple Node.js installer for the excellent Just command runner (https://just.systems). This allows
+you to install Just as part of the `npm install` command, so you don't have to worry about setting
+it up separately. Great for development teams!
 
 Local usage (great for team projects):
 
@@ -23,20 +25,20 @@ $ yarn global add just-install
 ## Purpose
 
 Using Just is an excellent option for a more robust command runner in your Node.js projects.
-However, it requires installing Just separately from the `npm install` command, using one
+However, it requires installing Just on your system as a separate installation step, using one
 of the various package managers for your system of choice.
 
-If you want to remove the extra setup step of installing Just before developing a Node.js
+If you want to remove the extra setup step of installing Just when developing a Node.js
 application, this utility will install a local, standalone binary as part of the `npm install`
 command.
 
 After installation, the `just` command will work in npm scripts:
 
-```js
+```json
 // package.json:
 
 {
-  ...
+  // ...
   "scripts": {
     "start": "just start"
   }
@@ -53,9 +55,10 @@ It's great for teams who want to make the set up process for their project as ea
 
 # Implementation notes
 
-This utility executes Just by spawning a child process from Node.js and passing through all stdio.
-This is necessary for Windows and Yarn users, so to avoid an overly-complex installation, everybody
-has to do it this way. I don't expect this to cause any issues, but it might be worth noting.
+This utility executes Just by spawning a child process from Node.js and passing through all stdio
+from the Just executable. This is necessary due to technical reasons for Windows and Yarn users, 
+so to avoid an overly-complex installation process, it works this way for Mac and Linus users too. 
+I don't expect this to cause any issues, but it might be worth noting.
 
 # MIT License
 

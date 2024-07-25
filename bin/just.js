@@ -18,8 +18,14 @@ const ext = process.platform === 'win32' ? '.exe' : '';
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-child_process.execFileSync(
-  path.resolve(__dirname, 'just' + ext),
-  process.argv.slice(2),
-  { stdio: 'inherit' }
-);
+try {
+  child_process.execFileSync(
+    path.resolve(__dirname, 'just' + ext),
+    process.argv.slice(2),
+    { stdio: 'inherit' }
+  );
+} catch (err) {
+  if ('status' in err)
+    exit(err.status);
+  throw err;
+}

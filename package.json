@@ -1,6 +1,6 @@
 {
   "name": "just-install",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Install the Just command runner (https://just.systems) as part of `npm install` (Mac/Linux/Windows).",
   "main": "index.js",
   "type": "module",

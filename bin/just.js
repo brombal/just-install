@@ -26,6 +26,6 @@ try {
   );
 } catch (err) {
   if ('status' in err)
-    exit(err.status);
+    process.exit(err.status);
   throw err;
 }
